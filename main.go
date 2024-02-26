@@ -28,7 +28,7 @@ func main() {
 
 	// Check if correct number of arguments is provided
 	if len(os.Args) != 3 {
-		fmt.Println("Enter valid arguments (go run main.go <input.txt> <output.txt>)")
+		fmt.Fprintln(os.Stderr, "Please provide valid arguments. Usage: go run main.go <input.txt> <output.txt>")
 		os.Exit(1)
 	}
 	inputFile := os.Args[1]
@@ -110,7 +110,7 @@ func main() {
 func ReadFile(inputFile string) string {
 	input, err := ioutil.ReadFile(inputFile)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	if len(input) == 0 {
@@ -158,7 +158,7 @@ func ParatheseExist(s string) bool {
 // ProcessTransformation processes various transformations
 func ProcessTransformation(action string, delimeter int, index int, textSlice []string) []string {
 	if index-delimeter < 0 {
-		fmt.Printf("There is not %d words before\n", delimeter)
+		fmt.Fprintf(os.Stderr, "There are not enough words preceding the transformation keyword to apply (expected %d)\n", delimeter)
 		os.Exit(1)
 	}
 	if action == "(cap)" {
@@ -190,7 +190,7 @@ func ProcessTransformation(action string, delimeter int, index int, textSlice []
 		}
 		decimalValue, err := strconv.ParseInt(textSlice[index-delimeter], base, 64)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 		textSlice[index-delimeter] = strconv.Itoa(int(decimalValue))
@@ -249,7 +249,7 @@ func MergeString(textSlice []string) string {
 func WriteFile(outputFile string, output string) {
 	err := ioutil.WriteFile(outputFile, []byte(output), 0700)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
