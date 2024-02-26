@@ -34,7 +34,7 @@ Suppose you have an input file `sample.txt` with the following content:
 `Simply add 42 `(hex)` and 10 `(bin)` and you will see the result is 68.`
 
 ```bash
-go run . sample.txt result.txt.txt
+go run . sample.txt result.txt
 ```
 `result.txt:`
 `Simply add 66 and 2 and you will see the result is 68.`
