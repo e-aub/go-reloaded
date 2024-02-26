@@ -33,12 +33,15 @@ Suppose you have an input file `input.txt` with the following content:
 
 ```txt
 Simply add 42 `(hex)` and 10 `(bin)` and you will see the result is 68.
+```
 
 ```bash
 ./go-reloaded input.txt output.txt
+```
 
 ```txt
 Simply add `66` and `2` and you will see the result is 68.
+```
 
 
 
