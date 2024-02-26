@@ -36,6 +36,7 @@ Suppose you have an input file `input.txt` with the following content:
 ```bash
 ./go-reloaded input.txt output.txt
 ```
+`output.txt:`
 `Simply add 66 and 2 and you will see the result is 68.`
 
 
