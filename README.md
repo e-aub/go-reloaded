@@ -30,10 +30,8 @@ Replace `input.txt` with the path to your input file and `output.txt` with the d
 ### Example
 
 Suppose you have an input file `input.txt` with the following content:
-
-```txt
+```plaintext
 Simply add 42 `(hex)` and 10 `(bin)` and you will see the result is 68.
-```
 
 ```bash
 ./go-reloaded input.txt output.txt
