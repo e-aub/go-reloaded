@@ -38,7 +38,7 @@ Simply add 42 `(hex)` and 10 `(bin)` and you will see the result is 68.
 ```
 
 ```plaintext
-Simply add `66` and <span style= "color : blue;">2</span> and you will see the result is 68.
+Simply add `66` and <span style="color: blue;">2</span> and you will see the result is 68.
 ```
 
 
