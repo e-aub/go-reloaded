@@ -29,14 +29,14 @@ Replace `input.txt` with the path to your input file and `output.txt` with the d
 
 ### Example
 
-Suppose you have an input file `input.txt` with the following content:
+Suppose you have an input file `sample.txt` with the following content:
 
 `Simply add 42 `(hex)` and 10 `(bin)` and you will see the result is 68.`
-```
+
 ```bash
-go run . input.txt output.txt
+go run . sample.txt result.txt.txt
 ```
-`output.txt:`
+`result.txt:`
 `Simply add 66 and 2 and you will see the result is 68.`
 
 
