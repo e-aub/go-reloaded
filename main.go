@@ -87,7 +87,6 @@ func main() {
 			}
 			text[i-1] = strconv.Itoa(int(coverted))
 		} else if text[i] == "(bin)" {
-			fmt.Println("passed")
 			coverted, _ := strconv.ParseInt(text[i-1], 2, 0)
 			text[i-1] = strconv.Itoa(int(coverted))
 		}
