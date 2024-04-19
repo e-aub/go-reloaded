@@ -13,8 +13,8 @@ import (
 //Declaring variables
 
 var (
-	inputFileName string
-	// outputFileName string
+	inputFileName          string
+	outputFileName         string
 	input                  []byte
 	err                    error
 	lowRegex               = regexp.MustCompile(`(\(low, (\d+)\))`)
@@ -22,6 +22,8 @@ var (
 	capRegex               = regexp.MustCompile(`(\(cap, (\d+)\))`)
 	onePunctuationRegex    = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*)`)
 	groupPunctuationsRegex = regexp.MustCompile(`([.,!?:;\s]+[.,!?:;])`)
+	vowelsRegex            = regexp.MustCompile(`((\s+[aA])\s([aeiouh]))`)
+	quotesRegex            = regexp.MustCompile(`('\s*([-.,!?:;]*\w+(?:[-.,!?:;\s]+\w+)+[-.,!?:;]*)\s*')`)
 	delimiter              = 1
 	match                  []string
 )
@@ -33,7 +35,7 @@ func main() {
 		return
 	}
 	inputFileName = os.Args[1]
-	// outputFileName = os.Args[2]
+	outputFileName = os.Args[2]
 	//Read file content
 	input, err = ioutil.ReadFile(inputFileName)
 	if err != nil {
@@ -104,10 +106,17 @@ func main() {
 			text = deleteActions(text, i)
 		}
 	}
-
-	// Handle space before punctuations
-	strText := onePunctFunc(text)
-	// writeToOutput(text, outputFileName)
+	// join slice
+	strText := strings.Join(text, " ")
+	// Handle space before and after punctuations
+	strText = onePunctFunc(strText)
+	//Handle successive punctuations
+	strText = groupPunctFunc(strText)
+	// add n to a if a *vowel*
+	strText = vowelFix(strText)
+	// single quotes fix
+	strText = quotesRegex.ReplaceAllString(strText, "'$2'")
+	writeToOutput(strText, outputFileName)
 	fmt.Println(strText)
 }
 
@@ -164,23 +173,29 @@ func deleteActions(text []string, toDelete int) []string {
 	return text
 }
 
-func onePunctFunc(text []string) string {
-	strText := strings.Join(text, " ")
+func onePunctFunc(text string) string {
+	text = onePunctuationRegex.ReplaceAllString(text, "$2 ")
+	return text
+}
 
-	strText = onePunctuationRegex.ReplaceAllString(strText, "$2 ")
-	strText = groupPunctuationsRegex.ReplaceAllStringFunc(strText, func(match string) string {
+func groupPunctFunc(text string) string {
+	text = groupPunctuationsRegex.ReplaceAllStringFunc(text, func(match string) string {
 		withoutSpaces := strings.ReplaceAll(match, " ", "")
 		return withoutSpaces
 	})
-
-	return strText
+	return text
 }
 
-// func writeToOutput(toWrite []string, outputFileName string) {
-// 	// Write output
-// 	err = ioutil.WriteFile(outputFileName, []byte(toWrite), 0777)
-// 	if err != nil {
-// 		fmt.Fprintf(os.Stderr, "Error while writing content in the file\nError: %v\n", err)
-// 		return
-// 	}
-// }
+func vowelFix(text string) string {
+	text = vowelsRegex.ReplaceAllString(text, "${2}n ${3}")
+	return text
+}
+
+func writeToOutput(toWrite string, outputFileName string) {
+	// Write output
+	err = ioutil.WriteFile(outputFileName, []byte(toWrite), 0777)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error while writing content in the file\nError: %v\n", err)
+		return
+	}
+}
