@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 //Declaring variables
@@ -14,14 +15,15 @@ import (
 var (
 	inputFileName string
 	// outputFileName string
-	input []byte
-	// output []byte
-	err       error
-	lowRegex  = regexp.MustCompile(`(\(low, (\d+)\))`)
-	upRegex   = regexp.MustCompile(`(\(up, (\d+)\))`)
-	capRegex  = regexp.MustCompile(`(\(cap, (\d+)\))`)
-	delimiter = 1
-	match     []string
+	input                  []byte
+	err                    error
+	lowRegex               = regexp.MustCompile(`(\(low, (\d+)\))`)
+	upRegex                = regexp.MustCompile(`(\(up, (\d+)\))`)
+	capRegex               = regexp.MustCompile(`(\(cap, (\d+)\))`)
+	onePunctuationRegex    = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*)`)
+	groupPunctuationsRegex = regexp.MustCompile(`([.,!?:;\s]+[.,!?:;])`)
+	delimiter              = 1
+	match                  []string
 )
 
 func main() {
@@ -46,7 +48,7 @@ func main() {
 		}
 		if text[i] == "(low)" {
 			text[i-1] = strings.ToLower(text[i-1])
-			text = DeleteActions(text, i)
+			text = deleteActions(text, i)
 		} else if lowRegex.FindStringSubmatch(text[i]) != nil {
 			match = lowRegex.FindStringSubmatch(text[i])
 			delimiter, _ = strconv.Atoi(match[2])
@@ -57,11 +59,11 @@ func main() {
 			for j := i - 1; j+delimiter >= i; j-- {
 				text[j] = strings.ToLower(text[j])
 			}
-			text = DeleteActions(text, i)
+			text = deleteActions(text, i)
 			delimiter = 1
 		} else if text[i] == "(up)" {
 			text[i-1] = strings.ToUpper(text[i-1])
-			text = DeleteActions(text, i)
+			text = deleteActions(text, i)
 		} else if upRegex.FindStringSubmatch(text[i]) != nil {
 			match = upRegex.FindStringSubmatch(text[i])
 			delimiter, _ = strconv.Atoi(match[2])
@@ -72,11 +74,11 @@ func main() {
 			for j := i - 1; j+delimiter >= i; j-- {
 				text[j] = strings.ToUpper(text[j])
 			}
-			text = DeleteActions(text, i)
+			text = deleteActions(text, i)
 			delimiter = 1
 		} else if text[i] == "(cap)" {
-			text[i-1] = Capitalize(text[i-1])
-			text = DeleteActions(text, i)
+			text[i-1] = capitalize(text[i-1])
+			text = deleteActions(text, i)
 		} else if capRegex.FindStringSubmatch(text[i]) != nil {
 			match = capRegex.FindStringSubmatch(text[i])
 			delimiter, _ = strconv.Atoi(match[2])
@@ -85,25 +87,28 @@ func main() {
 				continue
 			}
 			for j := i - 1; j+delimiter >= i; j-- {
-				text[j] = Capitalize(text[j])
+				text[j] = capitalize(text[j])
 			}
 			delimiter = 1
-			text = DeleteActions(text, i)
+			text = deleteActions(text, i)
 		} else if text[i] == "(hex)" {
 			coverted, err := strconv.ParseInt(text[i-1], 16, 0)
 			if err != nil {
 				panic(err)
 			}
 			text[i-1] = strconv.Itoa(int(coverted))
-			text = DeleteActions(text, i)
+			text = deleteActions(text, i)
 		} else if text[i] == "(bin)" {
 			coverted, _ := strconv.ParseInt(text[i-1], 2, 0)
 			text[i-1] = strconv.Itoa(int(coverted))
-			text = DeleteActions(text, i)
+			text = deleteActions(text, i)
 		}
 	}
-	fmt.Println(text)
 
+	// Handle space before punctuations
+	strText := onePunctFunc(text)
+	// writeToOutput(text, outputFileName)
+	fmt.Println(strText)
 }
 
 func isTheSecondPart(s string) bool {
@@ -125,9 +130,10 @@ func isTheSecondPart(s string) bool {
 	return false
 }
 
-func splitString([]byte) []string {
+func splitString(input []byte) []string {
 	split := strings.Split(string(input), " ")
 	for index, word := range split {
+		//Check if the next element of the slice is the second part of the action, Example : ["(cap," "333)"] and concatenate them
 		if word == "(low," || word == "(up," || word == "(cap," {
 			if index != len(split)-1 && isTheSecondPart(split[index+1]) {
 				split[index] = split[index] + " " + split[index+1]
@@ -140,36 +146,41 @@ func splitString([]byte) []string {
 	return split
 }
 
-func Capitalize(s string) string {
-	sRune := []rune(s)
-	for index, letter := range sRune {
-		if letter >= 'A' && letter <= 'Z' {
-			sRune[index] += 32
-		}
+func capitalize(s string) string {
+	rs := []rune(s)
+
+	if len(rs) == 0 {
+		return ""
 	}
-	if sRune[0] >= 'a' && sRune[0] <= 'z' {
-		sRune[0] -= 32
+	rs[0] = unicode.ToUpper(rs[0])
+	for i := 1; i < len(rs); i++ {
+		rs[i] = unicode.ToLower(rs[i])
 	}
-	for i := 0; i < len(sRune)-1; i++ {
-		if !(sRune[i] >= 'a' && sRune[i] <= 'z' || sRune[i] >= '0' && sRune[i] <= '9' || sRune[i] >= 'A' && sRune[i] <= 'Z') {
-			if sRune[i+1] >= 'a' && sRune[i+1] <= 'z' {
-				sRune[i+1] -= 32
-			}
-		}
-	}
-	return string(sRune)
+	return string(rs)
 }
 
-func DeleteActions(text []string, toDelete int) []string {
+func deleteActions(text []string, toDelete int) []string {
 	text = append(text[:toDelete], text[toDelete+1:]...)
 	return text
 }
 
-// func writeToOutput(toWrite string){
-// 	//Write output
-// // err = ioutil.WriteFile(outputFileName, output, 0777)
-// // if err != nil {
-// // 	fmt.Fprintf(os.Stderr, "Error while writing content in the file\nError: %v\n", err)
-// // 	return
-// // }
+func onePunctFunc(text []string) string {
+	strText := strings.Join(text, " ")
+
+	strText = onePunctuationRegex.ReplaceAllString(strText, "$2 ")
+	strText = groupPunctuationsRegex.ReplaceAllStringFunc(strText, func(match string) string {
+		withoutSpaces := strings.ReplaceAll(match, " ", "")
+		return withoutSpaces
+	})
+
+	return strText
+}
+
+// func writeToOutput(toWrite []string, outputFileName string) {
+// 	// Write output
+// 	err = ioutil.WriteFile(outputFileName, []byte(toWrite), 0777)
+// 	if err != nil {
+// 		fmt.Fprintf(os.Stderr, "Error while writing content in the file\nError: %v\n", err)
+// 		return
+// 	}
 // }
