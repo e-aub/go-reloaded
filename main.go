@@ -17,9 +17,9 @@ var (
 	input []byte
 	// output []byte
 	err       error
-	lowRegex  = regexp.MustCompile(`(\(low,\s(\d+)\))`)
-	upRegex   = regexp.MustCompile(`(\(up,\s(\d+)\))`)
-	capRegex  = regexp.MustCompile(`(\(cap,\s(\d+)\))`)
+	lowRegex  = regexp.MustCompile(`(\(low, (\d+)\))`)
+	upRegex   = regexp.MustCompile(`(\(up, (\d+)\))`)
+	capRegex  = regexp.MustCompile(`(\(cap, (\d+)\))`)
 	delimiter = 1
 	match     []string
 )
@@ -44,58 +44,69 @@ func main() {
 		if len(text) <= 1 {
 			break
 		}
-		if text[i] == "low" {
+		if text[i] == "(low)" {
 			text[i-1] = strings.ToLower(text[i-1])
+			text = DeleteActions(text, i)
 		} else if lowRegex.FindStringSubmatch(text[i]) != nil {
 			match = lowRegex.FindStringSubmatch(text[i])
 			delimiter, _ = strconv.Atoi(match[2])
 			if i-delimiter < 0 {
+				fmt.Fprintf(os.Stderr, "The amount of words that you want to lowercase is not enough")
 				continue
 			}
 			for j := i - 1; j+delimiter >= i; j-- {
 				text[j] = strings.ToLower(text[j])
 			}
+			text = DeleteActions(text, i)
 			delimiter = 1
 		} else if text[i] == "(up)" {
 			text[i-1] = strings.ToUpper(text[i-1])
+			text = DeleteActions(text, i)
 		} else if upRegex.FindStringSubmatch(text[i]) != nil {
 			match = upRegex.FindStringSubmatch(text[i])
 			delimiter, _ = strconv.Atoi(match[2])
 			if i-delimiter < 0 {
+				fmt.Fprintf(os.Stderr, "The amount of words that you want to uppercase is not enough")
 				continue
 			}
 			for j := i - 1; j+delimiter >= i; j-- {
 				text[j] = strings.ToUpper(text[j])
 			}
+			text = DeleteActions(text, i)
 			delimiter = 1
 		} else if text[i] == "(cap)" {
 			text[i-1] = Capitalize(text[i-1])
+			text = DeleteActions(text, i)
 		} else if capRegex.FindStringSubmatch(text[i]) != nil {
 			match = capRegex.FindStringSubmatch(text[i])
 			delimiter, _ = strconv.Atoi(match[2])
 			if i-delimiter < 0 {
+				fmt.Fprintf(os.Stderr, "The amount of words that you want to capitalize is not enough")
 				continue
 			}
 			for j := i - 1; j+delimiter >= i; j-- {
 				text[j] = Capitalize(text[j])
 			}
 			delimiter = 1
+			text = DeleteActions(text, i)
 		} else if text[i] == "(hex)" {
 			coverted, err := strconv.ParseInt(text[i-1], 16, 0)
 			if err != nil {
 				panic(err)
 			}
 			text[i-1] = strconv.Itoa(int(coverted))
+			text = DeleteActions(text, i)
 		} else if text[i] == "(bin)" {
 			coverted, _ := strconv.ParseInt(text[i-1], 2, 0)
 			text[i-1] = strconv.Itoa(int(coverted))
+			text = DeleteActions(text, i)
 		}
 	}
 	fmt.Println(text)
 
 }
 
-func valid(s string) bool {
+func isTheSecondPart(s string) bool {
 	if s == "" {
 		return false
 	}
@@ -117,22 +128,17 @@ func valid(s string) bool {
 func splitString([]byte) []string {
 	split := strings.Split(string(input), " ")
 	for index, word := range split {
-		if word == "(low," || word == "(up," || word == "(cap," && index != len(split)-1 && valid(split[index+1]) {
-			split[index] = split[index] + " " + split[index+1]
-			split = append(split[:index+1], split[index+2:]...)
+		if word == "(low," || word == "(up," || word == "(cap," {
+			if index != len(split)-1 && isTheSecondPart(split[index+1]) {
+				split[index] = split[index] + " " + split[index+1]
+				split = append(split[:index+1], split[index+2:]...)
+			}
 		} else {
 			continue
 		}
 	}
 	return split
 }
-
-//Write output
-// err = ioutil.WriteFile(outputFileName, output, 0777)
-// if err != nil {
-// 	fmt.Fprintf(os.Stderr, "Error while writing content in the file\nError: %v\n", err)
-// 	return
-// }
 
 func Capitalize(s string) string {
 	sRune := []rune(s)
@@ -153,3 +159,17 @@ func Capitalize(s string) string {
 	}
 	return string(sRune)
 }
+
+func DeleteActions(text []string, toDelete int) []string {
+	text = append(text[:toDelete], text[toDelete+1:]...)
+	return text
+}
+
+// func writeToOutput(toWrite string){
+// 	//Write output
+// // err = ioutil.WriteFile(outputFileName, output, 0777)
+// // if err != nil {
+// // 	fmt.Fprintf(os.Stderr, "Error while writing content in the file\nError: %v\n", err)
+// // 	return
+// // }
+// }
