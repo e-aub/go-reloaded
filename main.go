@@ -15,7 +15,6 @@ import (
 
 var (
 	text                   []string
-	base                   int
 	inputFileName          string
 	outputFileName         string
 	input                  string
@@ -89,6 +88,67 @@ func capitalize(s string) (string, error) {
 	return string(rs), err
 }
 
+func ToLower(index int, delimiter int) error {
+	for index != 0 && text[index-1] == "" {
+		index -= 1
+	}
+	if index-delimiter < 0 {
+		return errors.New("the amount of words that you want to lowercase is not enough")
+	}
+	for j := index - 1; j+delimiter >= index; j-- {
+		text[j] = strings.ToLower(text[j])
+	}
+	return nil
+}
+
+func ToUpper(index int, delimiter int) error {
+	for index != 0 && text[index-1] == "" {
+		index -= 1
+	}
+	if index-delimiter < 0 {
+		return errors.New("the amount of words that you want to uppercase is not enough")
+	}
+	for j := index - 1; j+delimiter >= index; j-- {
+		text[j] = strings.ToUpper(text[j])
+	}
+	return nil
+}
+
+func ToCap(index int, delimiter int) error {
+	for index != 0 && text[index-1] == "" {
+		index -= 1
+	}
+	if index-delimiter < 0 {
+		return errors.New("the amount of words that you want to capitalize is not enough")
+	}
+	for j := index - 1; j+delimiter >= index; j-- {
+		temp, err := capitalize(text[j])
+		if err != nil {
+			return err
+		}
+		text[j] = temp
+	}
+	return nil
+}
+
+func toDecimal(index int, base int) error {
+
+	var temp int64
+	var err error
+	for index != -1 && text[index-1] == "" {
+		index -= 1
+	}
+	if index-1 < 0 {
+		return errors.New("invalid syntax")
+	}
+	temp, err = strconv.ParseInt(text[index-1], base, 64)
+	if err != nil {
+		return err
+	}
+	text[index-1] = strconv.Itoa(int(temp))
+	return nil
+}
+
 func deleteActions(text []string, toDelete int) []string {
 	text = append(text[:toDelete], text[toDelete+1:]...)
 	return text
@@ -136,42 +196,23 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error while reading content in the file\nError: %v\n", err)
 		return
 	}
-	input = onePunctFunc(input)
-	input = groupPunctFunc(input)
+	// input = onePunctFunc(input)
+	// input = groupPunctFunc(input)
 	//split string
 	text = splitString(input)
 	//matching user prompts
 	for i := 0; i < len(text); i++ {
 		if len(text) <= 1 {
+			fmt.Fprintln(os.Stderr, "insert at least one word")
 			break
 		}
 		if text[i] == "(low)" {
-			k := i
-			if k-1 < 0 {
-				fmt.Fprintf(os.Stderr, "The amount of words that you want to lowercase is not enough")
+			err = ToLower(i, 1)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
 				continue
 			}
-			for text[k-1] == "" {
-				k -= 1
-			}
-			text[k-1] = strings.ToLower(text[k-1])
 			text = deleteActions(text, i)
-		} else if lowRegex.FindStringSubmatch(text[i]) != nil {
-			match = lowRegex.FindStringSubmatch(text[i])
-			delimiter, _ = strconv.Atoi(match[2])
-			k := i
-			for text[k-1] == "" {
-				k -= 1
-			}
-			if k-delimiter < 0 {
-				fmt.Fprintf(os.Stderr, "The amount of words that you want to lowercase is not enough")
-				continue
-			}
-			for j := k - 1; j+delimiter >= k; j-- {
-				text[j] = strings.ToLower(text[j])
-			}
-			text = deleteActions(text, i)
-			delimiter = 1
 		} else if text[i] == "(up)" {
 			k := i
 			if k-1 < 0 {
@@ -183,22 +224,6 @@ func main() {
 			}
 			text[k-1] = strings.ToUpper(text[k-1])
 			text = deleteActions(text, i)
-		} else if upRegex.FindStringSubmatch(text[i]) != nil {
-			match = upRegex.FindStringSubmatch(text[i])
-			delimiter, _ = strconv.Atoi(match[2])
-			k := i
-			for text[k-1] == "" {
-				k -= 1
-			}
-			if k-delimiter < 0 {
-				fmt.Fprintf(os.Stderr, "The amount of words that you want to uppercase is not enough")
-				continue
-			}
-			for j := k - 1; j+delimiter >= k; j-- {
-				text[j] = strings.ToUpper(text[j])
-			}
-			text = deleteActions(text, i)
-			delimiter = 1
 		} else if text[i] == "(cap)" {
 			k := i
 			if k-1 < 0 {
@@ -214,54 +239,46 @@ func main() {
 				continue
 			}
 			text = deleteActions(text, i)
+		} else if text[i] == "(bin)" {
+			err = toDecimal(i, 2)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				continue
+			}
+			text = deleteActions(text, i)
+		} else if text[i] == "(hex)" {
+			err = toDecimal(i, 16)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				continue
+			}
+			text = deleteActions(text, i)
+		} else if lowRegex.FindStringSubmatch(text[i]) != nil {
+			match = lowRegex.FindStringSubmatch(text[i])
+			delimiter, _ = strconv.Atoi(match[2])
+			err = ToLower(i, delimiter)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				continue
+			}
+			text = deleteActions(text, i)
+		} else if upRegex.FindStringSubmatch(text[i]) != nil {
+			match = upRegex.FindStringSubmatch(text[i])
+			delimiter, _ = strconv.Atoi(match[2])
+			err = ToUpper(i, delimiter)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				continue
+			}
+			text = deleteActions(text, i)
 		} else if capRegex.FindStringSubmatch(text[i]) != nil {
 			match = capRegex.FindStringSubmatch(text[i])
 			delimiter, _ = strconv.Atoi(match[2])
-			k := i
-			for text[k-1] == "" {
-				k -= 1
-			}
-			if k-delimiter < 0 {
-				fmt.Fprintf(os.Stderr, "The amount of words that you want to capitalize is not enough")
-				continue
-			}
-			for j := k - 1; j+delimiter >= k; j-- {
-				text[j], err = capitalize(text[j])
-				if err != nil {
-					fmt.Fprintln(os.Stderr, err)
-					break
-				}
-			}
-			delimiter = 1
-			text = deleteActions(text, i)
-		} else if text[i] == "(hex)" {
-			k := i
-			if k-1 < 0 {
-				fmt.Fprintf(os.Stderr, "The amount of words that you want to convert to decimal is not enough")
-				continue
-			}
-			for text[k-1] == "" {
-				k -= 1
-			}
-
-			coverted, err := strconv.ParseInt(text[k-1], 16, 0)
+			err = ToCap(i, delimiter)
 			if err != nil {
-				panic(err)
-			}
-			text[k-1] = strconv.Itoa(int(coverted))
-			text = deleteActions(text, i)
-		} else if text[i] == "(bin)" {
-			k := i
-			if k-1 < 0 {
-				fmt.Fprintf(os.Stderr, "The amount of words that you want to convert to decimal is not enough")
+				fmt.Fprintln(os.Stderr, err)
 				continue
 			}
-			for text[k-1] == "" {
-				k -= 1
-			}
-
-			coverted, _ := strconv.ParseInt(text[k-1], 2, 0)
-			text[k-1] = strconv.Itoa(int(coverted))
 			text = deleteActions(text, i)
 		}
 	}
