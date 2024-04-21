@@ -26,8 +26,8 @@ var (
 	lastPunctuationRegex   = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*$)`)
 	groupPunctuationsRegex = regexp.MustCompile(`([.,!?:;\s]+[.,!?:;])`)
 	vowelsRegex            = regexp.MustCompile(`((\s*[aA])\s([aeiouh]))`)
-	quotesRegex            = regexp.MustCompile(`('\s*([-.,!?:;]*\w+(?:[-.,!?:;\s]+\w+)+[-.,!?:;]*)\s*')`)
-	delimiter              = 1
+	quotesRegex            = regexp.MustCompile(`('\s*([-.,!?:;]*\w+(?:[-.,!?:;\s]*\w+)+[-.,!?:;]*)\s*')`)
+	delimiter              int
 	match                  []string
 )
 
@@ -51,8 +51,8 @@ func textConversionModerator(action string, index int, delimiter int) error {
 		} else if action == "up" {
 			text[j] = strings.ToUpper(text[j])
 		}
-		text = deleteActions(text, toDeleteIndex)
 	}
+	text = deleteActions(text, toDeleteIndex)
 	return nil
 }
 
@@ -133,7 +133,13 @@ func toDecimal(index int, base int) error {
 }
 
 func deleteActions(text []string, toDelete int) []string {
-	text = append(text[:toDelete], text[toDelete+1:]...)
+	if toDelete == len(text) {
+		text = text[:toDelete]
+	} else {
+		text = append(text[:toDelete], text[toDelete+1:]...)
+
+	}
+
 	return text
 }
 
@@ -221,7 +227,7 @@ func main() {
 		} else if lowRegex.FindStringSubmatch(text[i]) != nil {
 			match = lowRegex.FindStringSubmatch(text[i])
 			delimiter, _ = strconv.Atoi(match[2])
-			err = textConversionModerator("low", i, 1)
+			err = textConversionModerator("low", i, delimiter)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				continue
@@ -229,7 +235,7 @@ func main() {
 		} else if upRegex.FindStringSubmatch(text[i]) != nil {
 			match = upRegex.FindStringSubmatch(text[i])
 			delimiter, _ = strconv.Atoi(match[2])
-			err = textConversionModerator("up", i, 1)
+			err = textConversionModerator("up", i, delimiter)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				continue
@@ -237,7 +243,7 @@ func main() {
 		} else if capRegex.FindStringSubmatch(text[i]) != nil {
 			match = capRegex.FindStringSubmatch(text[i])
 			delimiter, _ = strconv.Atoi(match[2])
-			err = textConversionModerator("cap", i, 1)
+			err = textConversionModerator("cap", i, delimiter)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				continue
