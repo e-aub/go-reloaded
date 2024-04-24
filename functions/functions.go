@@ -23,7 +23,7 @@ func SplitKeepSeparator(text, pattern string) []string {
 
 func ActionsModerator(word string, action string) (string, error) {
 	// var result string
-	// var err error
+	var err error
 	// switch action {
 	// case "low":
 	// case "up" :
@@ -31,7 +31,7 @@ func ActionsModerator(word string, action string) (string, error) {
 	// case "hex" :
 	// case "bin" :
 	// }
-	// return result, err
+	return word, err
 }
 
 func toLower(text string) string {
