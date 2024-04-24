@@ -1,6 +1,9 @@
 package functions
 
-import "regexp"
+import (
+	"regexp"
+	"unicode"
+)
 
 func SplitKeepSeparator(text, pattern string) []string {
 	regex := regexp.MustCompile(pattern)
@@ -19,6 +22,40 @@ func SplitKeepSeparator(text, pattern string) []string {
 }
 
 func ActionsModerator(word string, action string) (string, error) {
-	var err error
-	return word, err
+	// var result string
+	// var err error
+	// switch action {
+	// case "low":
+	// case "up" :
+	// case "cap" :
+	// case "hex" :
+	// case "bin" :
+	// }
+	// return result, err
+}
+
+func toLower(text string) string {
+	runeText := []rune(text)
+	var result string
+	for _, letter := range runeText {
+		if letter >= 'A' && letter <= 'Z' {
+			result += string(unicode.ToLower(letter))
+		} else {
+			result += string(letter)
+		}
+	}
+	return result
+}
+
+func toUpper(text string) string {
+	runeText := []rune(text)
+	var result string
+	for _, letter := range runeText {
+		if letter >= 'a' && letter <= 'z' {
+			result += string(unicode.ToUpper(letter))
+		} else {
+			result += string(letter)
+		}
+	}
+	return result
 }
