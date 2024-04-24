@@ -1,3 +1,3 @@
-module learn.zone01oujda.ma/git/aelhadda/go-reloaded.git
+module goreloaded
 
-go 1.18
+go 1.21.9
