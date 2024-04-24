@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"goreloaded/functions"
+	"go-reloaded/functions"
 	"os"
 	"regexp"
 )
