@@ -8,10 +8,11 @@ import (
 )
 
 var (
-	onePunctuationRegex    = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*)`)
-	lastPunctuationRegex   = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*$)`)
-	groupPunctuationsRegex = regexp.MustCompile(`([.,!?:;\s]+[.,!?:;])`)
-	vowelsRegex            = regexp.MustCompile(`((\s*[aA])\s([aeiouh]))`)
+	onePunctuationRegex    = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*)`)  // Matches one or more punctuation marks surrounded by whitespace
+	lastPunctuationRegex   = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*$)`) // Matches punctuation marks at the end of a string
+	groupPunctuationsRegex = regexp.MustCompile(`([.,!?:;\s]+[.,!?:;])`) // Matches groups of consecutive punctuation marks
+	vowelsRegex            = regexp.MustCompile(`((\s+[aA])\s+([aAeEiIoOuUhH]))`)
+	vowelsRegex2           = regexp.MustCompile(`((^[aA])\s+([aAeEiIoOuUhH]))`)
 	quotesRegex            = regexp.MustCompile(`('\s*([-.,!?:;]*\w+(?:[-.,!?:;\s]*\w+)+[-.,!?:;]*)\s*')`)
 )
 
@@ -116,6 +117,7 @@ func GroupPunctFunc(text string) string {
 }
 
 func VowelFix(text string) string {
+	text = vowelsRegex2.ReplaceAllString(text, "${2}n ${3}")
 	text = vowelsRegex.ReplaceAllString(text, "${2}n ${3}")
 	return text
 }
@@ -123,4 +125,19 @@ func VowelFix(text string) string {
 func QuotesFix(text string) string {
 	result := quotesRegex.ReplaceAllString(text, "'$2'")
 	return result
+}
+
+func CleanSpaces(text string) string {
+	var result []string
+	text = strings.TrimSpace(text)
+	temp := strings.Split(text, " ")
+	for _, word := range temp {
+		if word != "" && word != " " {
+			result = append(result, word)
+		} else {
+			continue
+		}
+	}
+	return strings.Join(result, " ")
+
 }
