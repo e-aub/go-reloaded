@@ -10,11 +10,11 @@ import (
 )
 
 var (
-	splitRegex            = `\((low|up|cap), (\d+)\)|\(cap\)|\(up\)|\(low\)|\(hex\)|\(bin\)`
-	withoutNumberRegex    = regexp.MustCompile(`\((low|up|cap|hex|bin)\)`)
-	bigWithoutNumberRegex = regexp.MustCompile(`((?:\b[\w_-]+\b[\W\s]*){1})\((low|up|cap|hex|bin)\)`)
-	withNumberRegex       = regexp.MustCompile(`\(((low|up|cap)), (\d+)\)`)
-	bigWithNumberRegex    = `((?:\b[\w]+\b\W*\s*){%s})\(((?:%s),\s*\d+)\)`
+	splitRegex            = `\((low|up|cap), (\d+)\)|\(cap\)|\(up\)|\(low\)|\(hex\)|\(bin\)`          // Regular expression for splitting text with the pattern
+	withoutNumberRegex    = regexp.MustCompile(`\((low|up|cap|hex|bin)\)`)                            //Regular expression to match actions without numbers
+	bigWithoutNumberRegex = regexp.MustCompile(`((?:\b[\w_-]+\b[\W\s]*){1})\((low|up|cap|hex|bin)\)`) // Regular expression to match actions without numbers along with 1 word before
+	withNumberRegex       = regexp.MustCompile(`\(((low|up|cap)), (\d+)\)`)                           // Regular expression to match actions with numbers
+	bigWithNumberRegex    = `((?:\b[\w]+\b\W*\s*){%s})\(((?:%s),\s*\d+)\)`                            // Regular expression template for matching actions with numbers along with preceding words
 )
 
 func main() {
@@ -31,49 +31,53 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error while reading content in the file\nError: %v\n", err)
 		return
 	}
-	sliced := functions.SplitKeepSeparator(string(text), splitRegex)
-	for index, line := range sliced {
-		if withoutNumberRegex.Match([]byte(line)) {
-			if match := bigWithoutNumberRegex.FindStringSubmatch(line); match != nil {
+	sliced := functions.SplitKeepSeparator(string(text), splitRegex) // Split text using custom function
+	for index, line := range sliced {                                // Iterate over each line in the sliced text
+		if withoutNumberRegex.Match([]byte(line)) { // Handle actions without numbers
+			if match := bigWithoutNumberRegex.FindStringSubmatch(line); match != nil { // If there is one word before, handle it
 				word := match[1]
 				action := match[2]
-				word, err := functions.ActionsModerator(word, action)
+				word, err := functions.ActionsModerator(word, action) // Perform action on the word
 				if err != nil {
 					fmt.Fprintln(os.Stderr, err)
 					continue
 				}
-				sliced[index] = bigWithoutNumberRegex.ReplaceAllString(sliced[index], word)
+				sliced[index] = bigWithoutNumberRegex.ReplaceAllString(sliced[index], word) // Replace original word and action with processed word
 			} else {
-				fmt.Fprintln(os.Stderr, "enter at least one word before")
+				action := withoutNumberRegex.FindStringSubmatch(line)[1] // if there isn't a word before Prompt user to enter one word before the action
+				fmt.Fprintf(os.Stderr, "enter one word before (%s)\n", action)
 
 			}
-		} else if match := withNumberRegex.FindStringSubmatch(line); match != nil {
+		} else if match := withNumberRegex.FindStringSubmatch(line); match != nil { // Handle actions with numbers
 			asciiDelimiter := match[3]
 			action := match[2]
-			bigWithNumberCompiledRegex := regexp.MustCompile(fmt.Sprintf(bigWithNumberRegex, asciiDelimiter, action))
-			if bigMatch := bigWithNumberCompiledRegex.FindStringSubmatch(line); bigMatch != nil {
-				words, err := functions.ActionsModerator(bigMatch[1], action)
+			bigWithNumberCompiledRegex := regexp.MustCompile(fmt.Sprintf(bigWithNumberRegex, asciiDelimiter, action)) //Compile regular expression pattern with delimiter and action
+			if bigMatch := bigWithNumberCompiledRegex.FindStringSubmatch(line); bigMatch != nil {                     // If there are preceding words, handle them
+				words, err := functions.ActionsModerator(bigMatch[1], action) // Perform action on words
 				if err != nil {
 					fmt.Fprintln(os.Stderr, err)
 					continue
 				}
-				sliced[index] = bigWithNumberCompiledRegex.ReplaceAllString(line, words)
+				sliced[index] = bigWithNumberCompiledRegex.ReplaceAllString(line, words) //Replace original words and action with processed words
 			} else {
-				fmt.Fprintln(os.Stderr, "enter a valid words number to "+action)
+				fmt.Fprintln(os.Stderr, "enter a valid words number to "+action) // Prompt user to enter a valid number of words before the action
 			}
 
 		}
 	}
+	//Join lines together
 	result := strings.Join(sliced, "")
+	//Remove extra spaces
+	result = functions.CleanSpaces(result)
+	// Handle single punctuations
 	result = functions.OnePunctFunc(result)
-	// //Handle successive punctuations
+	//Handle successive punctuations
 	result = functions.GroupPunctFunc(result)
-	// // add n to a if a *vowel*
+	// add n to a if the next is a vowel
 	result = functions.VowelFix(result)
-	// // single quotes fix
+	// single quotes fix
 	result = functions.QuotesFix(result)
-	fmt.Println(result)
-	//Write output the result
+	//Write output the result and add a new line at the end
 	err = ioutil.WriteFile(outputFileName, []byte(result+"\n"), 0777)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error while writing content in the file\nError: %v\n", err)
