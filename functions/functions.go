@@ -2,7 +2,17 @@ package functions
 
 import (
 	"regexp"
+	"strconv"
+	"strings"
 	"unicode"
+)
+
+var (
+	onePunctuationRegex    = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*)`)
+	lastPunctuationRegex   = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*$)`)
+	groupPunctuationsRegex = regexp.MustCompile(`([.,!?:;\s]+[.,!?:;])`)
+	vowelsRegex            = regexp.MustCompile(`((\s*[aA])\s([aeiouh]))`)
+	quotesRegex            = regexp.MustCompile(`('\s*([-.,!?:;]*\w+(?:[-.,!?:;\s]*\w+)+[-.,!?:;]*)\s*')`)
 )
 
 func SplitKeepSeparator(text, pattern string) []string {
@@ -22,22 +32,36 @@ func SplitKeepSeparator(text, pattern string) []string {
 }
 
 func ActionsModerator(word string, action string) (string, error) {
-	// var result string
+	var result string
 	var err error
-	// switch action {
-	// case "low":
-	// case "up" :
-	// case "cap" :
-	// case "hex" :
-	// case "bin" :
-	// }
-	return word, err
+	switch action {
+	case "low":
+		result = toLower(word)
+	case "up":
+		result = toUpper(word)
+	case "cap":
+		result = capitalize(word)
+	case "hex":
+		word = strings.Trim(word, " ")
+		temp, err := strconv.ParseInt(word, 16, 64)
+		if err != nil {
+			return word, err
+		}
+		result = strconv.Itoa(int(temp))
+	case "bin":
+		word = strings.Trim(word, " ")
+		temp, err := strconv.ParseInt(word, 2, 64)
+		if err != nil {
+			return word, err
+		}
+		result = strconv.Itoa(int(temp))
+	}
+	return result, err
 }
 
 func toLower(text string) string {
-	runeText := []rune(text)
 	var result string
-	for _, letter := range runeText {
+	for _, letter := range text {
 		if letter >= 'A' && letter <= 'Z' {
 			result += string(unicode.ToLower(letter))
 		} else {
@@ -48,14 +72,55 @@ func toLower(text string) string {
 }
 
 func toUpper(text string) string {
-	runeText := []rune(text)
 	var result string
-	for _, letter := range runeText {
+	for _, letter := range text {
 		if letter >= 'a' && letter <= 'z' {
 			result += string(unicode.ToUpper(letter))
 		} else {
 			result += string(letter)
 		}
 	}
+	return result
+}
+
+func capitalize(text string) string {
+	text = strings.ToLower(text)
+	runeTxt := []rune(text)
+	prevIsletter := false
+	for index, letter := range runeTxt {
+		if letter >= 'a' && letter <= 'z' {
+			if !prevIsletter {
+				runeTxt[index] = unicode.ToUpper(letter)
+				prevIsletter = true
+			}
+		} else {
+			prevIsletter = false
+			continue
+		}
+	}
+	return string(runeTxt)
+}
+
+func OnePunctFunc(text string) string {
+	text = onePunctuationRegex.ReplaceAllString(text, "$2 ")
+	text = lastPunctuationRegex.ReplaceAllString(text, "$2")
+	return text
+}
+
+func GroupPunctFunc(text string) string {
+	text = groupPunctuationsRegex.ReplaceAllStringFunc(text, func(match string) string {
+		withoutSpaces := strings.ReplaceAll(match, " ", "")
+		return withoutSpaces
+	})
+	return text
+}
+
+func VowelFix(text string) string {
+	text = vowelsRegex.ReplaceAllString(text, "${2}n ${3}")
+	return text
+}
+
+func QuotesFix(text string) string {
+	result := quotesRegex.ReplaceAllString(text, "'$2'")
 	return result
 }
