@@ -76,7 +76,9 @@ func main() {
 	//Handle successive punctuations
 	result = functions.GroupPunctFunc(result)
 	// single quotes fix
-	result = functions.QuotesFix(result)
+	result = functions.Quotes(result)
+	//Remove extra spaces
+	result = functions.CleanSpaces(result)
 	//Write output the result and add a new line at the end
 	err = ioutil.WriteFile(outputFileName, []byte(result+"\n"), 0777)
 	if err != nil {

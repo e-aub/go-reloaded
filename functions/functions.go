@@ -8,17 +8,16 @@ import (
 )
 
 var (
-	onePunctuationRegex    = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*)`)  // Matches one or more punctuation marks surrounded by whitespace
-	lastPunctuationRegex   = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*$)`) // Matches punctuation marks at the end of a string
-	groupPunctuationsRegex = regexp.MustCompile(`([.,!?:;\s]+[.,!?:;])`) // Matches groups of consecutive punctuation marks
-	vowelsRegex            = regexp.MustCompile(`((\s+[aA])\s+([aAeEiIoOuUhH]))`)
-	vowelsRegex2           = regexp.MustCompile(`((^[aA])\s+([aAeEiIoOuUhH]))`)
-	quotesRegex            = regexp.MustCompile(`('\s*([-.,!?:;]*\w+(?:[-.,!?:;\s]*\w+)+[-.,!?:;]*)\s*')`)
+	onePunctuationRegex    = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*)`)           // Matches one or more punctuation marks surrounded by whitespace
+	lastPunctuationRegex   = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*$)`)          // Matches punctuation marks at the end of a string
+	groupPunctuationsRegex = regexp.MustCompile(`([.,!?:;\s]+[.,!?:;])`)          // Matches groups of consecutive punctuation marks
+	vowelsRegex            = regexp.MustCompile(`((\s+[aA])\s+([aAeEiIoOuUhH]))`) // Matches aA followed by a vowel
+	vowelsRegex2           = regexp.MustCompile(`((^[aA])\s+([aAeEiIoOuUhH]))`)   // Matches aA followed by a vowel in the beginning
 )
 
 func SplitKeepSeparator(text, pattern string) []string {
 	regex := regexp.MustCompile(pattern)
-	indices := regex.FindAllStringIndex(text, -1)
+	indices := regex.FindAllStringIndex(text, -1) //Extract indices of patterns
 	var parts []string
 	start := 0
 	for _, indexPair := range indices {
@@ -122,11 +121,6 @@ func VowelFix(text string) string {
 	return text
 }
 
-func QuotesFix(text string) string {
-	result := quotesRegex.ReplaceAllString(text, "'$2'")
-	return result
-}
-
 func CleanSpaces(text string) string {
 	var result []string
 	text = strings.TrimSpace(text)
@@ -140,4 +134,15 @@ func CleanSpaces(text string) string {
 	}
 	return strings.Join(result, " ")
 
+}
+
+func Quotes(text string) string {
+	text = regexp.MustCompile(` +`).ReplaceAllString(text, " ")
+	text = regexp.MustCompile(` '`).ReplaceAllString(text, "  '  ")
+	text = regexp.MustCompile(`' `).ReplaceAllString(text, "  '  ")
+	text = regexp.MustCompile(`^'`).ReplaceAllString(text, "  '  ")
+	text = regexp.MustCompile(`'$`).ReplaceAllString(text, "  '  ")
+	text = regexp.MustCompile(`( +' +([-.,!?:;]*\w+(?:[-.,!?:;\s]*'*\w+)+[-.,!?:;]*) +' )`).ReplaceAllString(text, " '$2' ")
+	text = regexp.MustCompile(`''`).ReplaceAllString(text, "' '")
+	return text
 }
