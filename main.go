@@ -10,17 +10,17 @@ import (
 )
 
 var (
-	splitRegex       = `\((low|up|cap), (\d+)\)|\(cap\)|\(up\)|\(low\)|\(hex\)|\(bin\)`          // Regular expression for splitting text with the pattern
-	withoutNumRgx    = regexp.MustCompile(`\((low|up|cap|hex|bin)\)`)                            //Regular expression to match actions without numbers
-	bigWithoutNumRgx = regexp.MustCompile(`((?:\b[\w_-]+\b[\W\s]*){1})\((low|up|cap|hex|bin)\)`) // Regular expression to match actions without numbers along with 1 word before
-	withNumRgx       = regexp.MustCompile(`\(((low|up|cap)), (\d+)\)`)                           // Regular expression to match actions with numbers
-	bigWithNumRgx    = `((?:\b[\w]+\b\W*\s*){%s})\(((?:%s),\s*\d+)\)`                            // Regular expression template for matching actions with numbers along with preceding words
+	splitRegex       = `\((low|up|cap), (\d+)\)|\(cap\)|\(up\)|\(low\)|\(hex\)|\(bin\)`         // Regular expression for splitting text with the pattern
+	withoutNumRgx    = regexp.MustCompile(`\((low|up|cap|hex|bin)\)`)                           //Regular expression to match actions without numbers
+	bigWithoutNumRgx = regexp.MustCompile(`((?:\b[\w_-]+\b[\W ]*){1})\((low|up|cap|hex|bin)\)`) // Regular expression to match actions without numbers along with 1 word before
+	withNumRgx       = regexp.MustCompile(`\(((low|up|cap)), (\d+)\)`)                          // Regular expression to match actions with numbers
+	bigWithNumRgx    = `((?:\b[\w]+\b\W* *){%s})\(((?:%s), *\d+)\)`                             // Regular expression template for matching actions with numbers along with preceding words
 )
 
 func main() {
 	//Check for valid arguments
 	if len(os.Args) != 3 {
-		fmt.Fprintln(os.Stderr, "Invalid arguments Usage : go run main.go <input.txt> <output.txt>")
+		fmt.Fprintln(os.Stderr, "\x1b[31mInvalid arguments Usage : go run main.go <input.txt> <output.txt>\x1b[0m")
 		return
 	}
 	inputFileName := os.Args[1]
@@ -28,7 +28,7 @@ func main() {
 	//Read file content
 	text, err := ioutil.ReadFile(inputFileName)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error while reading content in the file\nError: %v\n", err)
+		fmt.Fprintf(os.Stderr, "\x1b[31mError while reading content in the file\nError: %v\n\x1b[0m", err)
 		return
 	}
 	// add n to a if the next is a vowel
@@ -41,13 +41,13 @@ func main() {
 				action := match[2]
 				word, err := functions.ActionsModerator(word, action) // Perform action on the word
 				if err != nil {
-					fmt.Fprintln(os.Stderr, err)
+					fmt.Fprintln(os.Stderr, "\x1b[31m"+err.Error()+"\x1b[0m")
 					continue
 				}
-				sliced[index] = bigWithoutNumRgx.ReplaceAllString(sliced[index], word) // Replace original word and action with processed word
+				sliced[index] = bigWithoutNumRgx.ReplaceAllString(sliced[index], " "+word+" ") // Replace original word and action with processed word
 			} else {
 				action := withoutNumRgx.FindStringSubmatch(line)[1] // if there isn't a word before Prompt user to enter one word before the action
-				fmt.Fprintf(os.Stderr, "enter one word before (%s)\n", action)
+				fmt.Fprintf(os.Stderr, "\x1b[31menter one word before (%s)\n\x1b[0m", action)
 
 			}
 		} else if match := withNumRgx.FindStringSubmatch(line); match != nil { // Handle actions with numbers
@@ -57,12 +57,12 @@ func main() {
 			if bigMatch := bigWithNumberCompiledRegex.FindStringSubmatch(line); bigMatch != nil {                // If there are preceding words, handle them
 				words, err := functions.ActionsModerator(bigMatch[1], action) // Perform action on words
 				if err != nil {
-					fmt.Fprintln(os.Stderr, err)
+					fmt.Fprintln(os.Stderr, "\x1b[31m"+err.Error()+"\x1b[0m")
 					continue
 				}
-				sliced[index] = bigWithNumberCompiledRegex.ReplaceAllString(line, words) //Replace original words and action with processed words
+				sliced[index] = bigWithNumberCompiledRegex.ReplaceAllString(line, " "+words+" ") //Replace original words and action with processed words
 			} else {
-				fmt.Fprintln(os.Stderr, "enter a valid words number to "+action) // Prompt user to enter a valid number of words before the action
+				fmt.Fprintln(os.Stderr, "\x1b[31menter a valid words number to "+action+"\x1b[0m") // Prompt user to enter a valid number of words before the action
 			}
 
 		}
@@ -71,18 +71,18 @@ func main() {
 	result := strings.Join(sliced, "")
 	//Remove extra spaces
 	result = functions.CleanSpaces(result)
-	// Handle single punctuations
-	result = functions.OnePunctFunc(result)
-	//Handle successive punctuations
-	result = functions.GroupPunctFunc(result)
+	// Handle punctuations
+	result = functions.PunctFunc(result)
 	// single quotes fix
 	result = functions.Quotes(result)
 	//Remove extra spaces
 	result = functions.CleanSpaces(result)
+	// add n to a if the next is a vowel
+	result = functions.VowelFix(result)
 	//Write output the result and add a new line at the end
 	err = ioutil.WriteFile(outputFileName, []byte(result+"\n"), 0777)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error while writing content in the file\nError: %v\n", err)
+		fmt.Fprintf(os.Stderr, "\x1b[31mError while writing content in the file\nError: %v\n", err.Error()+"\x1b[0m")
 		return
 	}
 }

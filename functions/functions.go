@@ -8,11 +8,10 @@ import (
 )
 
 var (
-	onePunctuationRegex    = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*)`)           // Matches one or more punctuation marks surrounded by whitespace
-	lastPunctuationRegex   = regexp.MustCompile(`(\s*([.,!?:;]+)+\s*$)`)          // Matches punctuation marks at the end of a string
-	groupPunctuationsRegex = regexp.MustCompile(`([.,!?:;\s]+[.,!?:;])`)          // Matches groups of consecutive punctuation marks
-	vowelsRegex            = regexp.MustCompile(`((\s+[aA])\s+([aAeEiIoOuUhH]))`) // Matches aA followed by a vowel
-	vowelsRegex2           = regexp.MustCompile(`((^[aA])\s+([aAeEiIoOuUhH]))`)   // Matches aA followed by a vowel in the beginning
+	onePunctuationRegex    = regexp.MustCompile(` *([.,!?:;])`)                 // Matches one or more punctuation by whitespace
+	groupPunctuationsRegex = regexp.MustCompile(`( *[.,!?:; ]+[.,!?:;])`)       // Matches groups of consecutive punctuation marks
+	vowelsRegex            = regexp.MustCompile(`(( +[aA]) +([aAeEiIoOuUhH]))`) // Matches aA followed by a vowel
+	vowelsRegex2           = regexp.MustCompile(`((^[aA]) +([aAeEiIoOuUhH]))`)  // Matches aA followed by a vowel in the beginning
 )
 
 func SplitKeepSeparator(text, pattern string) []string {
@@ -20,12 +19,12 @@ func SplitKeepSeparator(text, pattern string) []string {
 	indices := regex.FindAllStringIndex(text, -1) //Extract indices of patterns
 	var parts []string
 	start := 0
-	for _, indexPair := range indices {
-		parts = append(parts, text[start:indexPair[1]])
-		start = indexPair[1]
+	for _, indexPair := range indices { //range over indices
+		parts = append(parts, text[start:indexPair[1]]) // and append text from the start to the index
+		start = indexPair[1]                            // Change the start to where we end last time
 	}
-	parts = append(parts, text[start:])
-	if parts[len(parts)-1] == "" {
+	parts = append(parts, text[start:]) // from the last matched index to the last index of the text
+	if parts[len(parts)-1] == "" {      // Delete the last part if it is empty
 		parts = parts[0 : len(parts)-1]
 	}
 	return parts
@@ -101,28 +100,24 @@ func capitalize(text string) string {
 	return string(runeTxt)
 }
 
-func OnePunctFunc(text string) string {
-	text = onePunctuationRegex.ReplaceAllString(text, "$2 ")
-	text = lastPunctuationRegex.ReplaceAllString(text, "$2")
-	return text
-}
-
-func GroupPunctFunc(text string) string {
-	text = groupPunctuationsRegex.ReplaceAllStringFunc(text, func(match string) string {
+func PunctFunc(text string) string {
+	text = onePunctuationRegex.ReplaceAllString(text, "$1 ")                             //add space after punc
+	text = groupPunctuationsRegex.ReplaceAllStringFunc(text, func(match string) string { //delete spaces between punctuations
 		withoutSpaces := strings.ReplaceAll(match, " ", "")
 		return withoutSpaces
 	})
 	return text
 }
 
-func VowelFix(text string) string {
+func VowelFix(text string) string { // add n to a if a is followed by a vowel
 	text = vowelsRegex2.ReplaceAllString(text, "${2}n ${3}")
 	text = vowelsRegex.ReplaceAllString(text, "${2}n ${3}")
 	return text
 }
 
-func CleanSpaces(text string) string {
+func CleanSpaces(text string) string { //Clean whitespaces
 	var result []string
+	var strRes string
 	text = strings.TrimSpace(text)
 	temp := strings.Split(text, " ")
 	for _, word := range temp {
@@ -132,17 +127,25 @@ func CleanSpaces(text string) string {
 			continue
 		}
 	}
-	return strings.Join(result, " ")
+	strRes = strings.Join(result, " ")
+	strRes = regexp.MustCompile(` \n+|\n+`).ReplaceAllString(strRes, "\n")
+	return strRes
 
 }
 
 func Quotes(text string) string {
+	// add spaces after and before quote to become easy to recognize
 	text = regexp.MustCompile(` +`).ReplaceAllString(text, " ")
+	text = regexp.MustCompile(`''`).ReplaceAllString(text, " ' ' ")
 	text = regexp.MustCompile(` '`).ReplaceAllString(text, "  '  ")
 	text = regexp.MustCompile(`' `).ReplaceAllString(text, "  '  ")
 	text = regexp.MustCompile(`^'`).ReplaceAllString(text, "  '  ")
 	text = regexp.MustCompile(`'$`).ReplaceAllString(text, "  '  ")
-	text = regexp.MustCompile(`( +' +([-.,!?:;]*\w+(?:[-.,!?:;\s]*'*\w+)+[-.,!?:;]*) +' )`).ReplaceAllString(text, " '$2' ")
+	//match text between quotes surround it by quotes
+	text = regexp.MustCompile(` +' +([-.,!?:; ]*\w*(?:[-.,!?:; ]*'*\w+)+[-.,!?:;]*) +' `).ReplaceAllString(text, " '$1' ")
+	// fix punctuation if ruined by quotes process
+	text = regexp.MustCompile(`(') +([-.,!?:;]) `).ReplaceAllString(text, "${1}${2} ")
+	// add space if there are two attached closing quotes
 	text = regexp.MustCompile(`''`).ReplaceAllString(text, "' '")
 	return text
 }
