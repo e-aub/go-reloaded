@@ -9,12 +9,17 @@ import (
 )
 
 var (
-	onePunctuationRegex    = regexp.MustCompile(` *([.,!?:;])`)                    // Matches one or more punctuation by whitespace
-	groupPunctuationsRegex = regexp.MustCompile(`( *[.,!?:; ]+[.,!?:;])`)          // Matches groups of consecutive punctuation marks
-	vowelsRegex            = regexp.MustCompile(`(([\W]+[aA]) +([aAeEiIoOuUhH]))`) // Matches aA followed by a vowel
-	vowelsRegex2           = regexp.MustCompile(`((^[aA]) +([aAeEiIoOuUhH]))`)     // Matches aA followed by a vowel in the beginning
+	// Matches one punctuation or one punctuation and a space before it
+	onePunctuationRegex = regexp.MustCompile(` *([.,!?:;])`)
+	// Matches groups of consecutive punctuation marks separated by spaces
+	groupPunctuationsRegex = regexp.MustCompile(`( *[.,!?:; ]+[.,!?:;])`)
+	// Matches aA followed by a vowel
+	vowelsRegex = regexp.MustCompile(`(([\W]+[aA]) +([aAeEiIoOuUhH]))`)
+	// Matches aA followed by a vowel in the beginning
+	vowelsRegex2 = regexp.MustCompile(`((^[aA]) +([aAeEiIoOuUhH]))`)
 )
 
+// function the check if the output file has a valid extension
 func IsValidExtension(outputFileName string) error {
 	if !regexp.MustCompile(`\.txt$`).Match([]byte(outputFileName)) {
 		return errors.New("enter a valid file extension (.txt)")
@@ -24,20 +29,26 @@ func IsValidExtension(outputFileName string) error {
 
 func SplitKeepSeparator(text, pattern string) []string {
 	regex := regexp.MustCompile(pattern)
-	indices := regex.FindAllStringIndex(text, -1) //Extract indices of patterns
+	//Extract indices of patterns
+	indices := regex.FindAllStringIndex(text, -1)
 	var parts []string
 	start := 0
-	for _, indexPair := range indices { //range over indices
-		parts = append(parts, text[start:indexPair[1]]) // and append text from the start to the index
-		start = indexPair[1]                            // Change the start to where we end last time
+	for _, indexPair := range indices {
+		// and append text from the start to the index
+		parts = append(parts, text[start:indexPair[1]])
+		// Change the start to where we end last time
+		start = indexPair[1]
 	}
-	parts = append(parts, text[start:]) // from the last matched index to the last index of the text
-	if parts[len(parts)-1] == "" {      // Delete the last part if it is empty
+	// from the last matched index to the last index of the text
+	parts = append(parts, text[start:])
+	// Delete the last string if it is empty
+	if parts[len(parts)-1] == "" {
 		parts = parts[0 : len(parts)-1]
 	}
 	return parts
 }
 
+// Perform actions on text
 func ActionsModerator(word string, action string) (string, error) {
 	var result string
 	var err error
@@ -109,21 +120,25 @@ func capitalize(text string) string {
 }
 
 func PunctFunc(text string) string {
-	text = onePunctuationRegex.ReplaceAllString(text, "$1 ")                             //add space after punc
-	text = groupPunctuationsRegex.ReplaceAllStringFunc(text, func(match string) string { //delete spaces between punctuations
+	//add space after punc
+	text = onePunctuationRegex.ReplaceAllString(text, "$1 ")
+	//delete spaces between punctuations
+	text = groupPunctuationsRegex.ReplaceAllStringFunc(text, func(match string) string {
 		withoutSpaces := strings.ReplaceAll(match, " ", "")
 		return withoutSpaces
 	})
 	return text
 }
 
-func VowelFix(text string) string { // add n to a if a is followed by a vowel
+func VowelFix(text string) string {
+	// add n to a if a is followed by a vowel
 	text = vowelsRegex2.ReplaceAllString(text, "${2}n ${3}")
 	text = vowelsRegex.ReplaceAllString(text, "${2}n ${3}")
 	return text
 }
 
-func CleanSpaces(text string) string { //Clean whitespaces
+// Clean whitespaces
+func CleanSpaces(text string) string {
 	var result []string
 	var strRes string
 	text = strings.TrimSpace(text)
