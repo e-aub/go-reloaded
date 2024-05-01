@@ -23,7 +23,7 @@ To use the program, follow these steps:
 Example usage:
 
 ```bash
-go run . input.txt output.txt
+go run main.go input.txt output.txt
 ```
 Replace `input.txt` with the path to your input file and `output.txt` with the desired output file path.
 
