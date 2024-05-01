@@ -8,10 +8,10 @@ import (
 )
 
 var (
-	onePunctuationRegex    = regexp.MustCompile(` *([.,!?:;])`)                 // Matches one or more punctuation by whitespace
-	groupPunctuationsRegex = regexp.MustCompile(`( *[.,!?:; ]+[.,!?:;])`)       // Matches groups of consecutive punctuation marks
-	vowelsRegex            = regexp.MustCompile(`(( +[aA]) +([aAeEiIoOuUhH]))`) // Matches aA followed by a vowel
-	vowelsRegex2           = regexp.MustCompile(`((^[aA]) +([aAeEiIoOuUhH]))`)  // Matches aA followed by a vowel in the beginning
+	onePunctuationRegex    = regexp.MustCompile(` *([.,!?:;])`)                    // Matches one or more punctuation by whitespace
+	groupPunctuationsRegex = regexp.MustCompile(`( *[.,!?:; ]+[.,!?:;])`)          // Matches groups of consecutive punctuation marks
+	vowelsRegex            = regexp.MustCompile(`(([\W]+[aA]) +([aAeEiIoOuUhH]))`) // Matches aA followed by a vowel
+	vowelsRegex2           = regexp.MustCompile(`((^[aA]) +([aAeEiIoOuUhH]))`)     // Matches aA followed by a vowel in the beginning
 )
 
 func SplitKeepSeparator(text, pattern string) []string {
@@ -129,6 +129,7 @@ func CleanSpaces(text string) string { //Clean whitespaces
 	}
 	strRes = strings.Join(result, " ")
 	strRes = regexp.MustCompile(` \n+|\n+`).ReplaceAllString(strRes, "\n")
+	strRes = regexp.MustCompile(`\n+ +`).ReplaceAllString(strRes, "\n")
 	return strRes
 
 }
