@@ -25,6 +25,11 @@ func main() {
 	}
 	inputFileName := os.Args[1]
 	outputFileName := os.Args[2]
+	err := functions.IsValidExtension(outputFileName)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "\x1b[31m"+err.Error()+"\x1b[0m")
+		os.Exit(1)
+	}
 	//Read file content
 	text, err := ioutil.ReadFile(inputFileName)
 	if err != nil {
@@ -79,8 +84,12 @@ func main() {
 	result = functions.CleanSpaces(result)
 	// add n to a if the next is a vowel
 	result = functions.VowelFix(result)
+	//check if the file extension is .txt
+	if !regexp.MustCompile(`.txt$`).Match([]byte(result)) {
+		panic("Enter a valid file extension")
+	}
 	//Write output the result and add a new line at the end
-	err = ioutil.WriteFile(outputFileName, []byte(result+"\n"), 0777)
+	err = ioutil.WriteFile(outputFileName, []byte(result+"\n"), 0600)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\x1b[31mError while writing content in the file\nError: %v\n", err.Error()+"\x1b[0m")
 		return

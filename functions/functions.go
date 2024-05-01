@@ -1,6 +1,7 @@
 package functions
 
 import (
+	"errors"
 	"regexp"
 	"strconv"
 	"strings"
@@ -13,6 +14,13 @@ var (
 	vowelsRegex            = regexp.MustCompile(`(([\W]+[aA]) +([aAeEiIoOuUhH]))`) // Matches aA followed by a vowel
 	vowelsRegex2           = regexp.MustCompile(`((^[aA]) +([aAeEiIoOuUhH]))`)     // Matches aA followed by a vowel in the beginning
 )
+
+func IsValidExtension(outputFileName string) error {
+	if !regexp.MustCompile(`\.txt$`).Match([]byte(outputFileName)) {
+		return errors.New("enter a valid file extension (.txt)")
+	}
+	return nil
+}
 
 func SplitKeepSeparator(text, pattern string) []string {
 	regex := regexp.MustCompile(pattern)
