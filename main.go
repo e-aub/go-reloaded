@@ -31,7 +31,6 @@ func main() {
 	inputFileName := os.Args[1]
 	outputFileName := os.Args[2]
 	//Check output file extension
-
 	if err := functions.IsValidExtension(outputFileName); err != nil {
 		fmt.Fprintln(os.Stderr, "\x1b[31m"+err.Error()+"\x1b[0m")
 		os.Exit(1)
@@ -106,6 +105,6 @@ func main() {
 	err = ioutil.WriteFile(outputFileName, []byte(result+"\n"), 0600)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\x1b[31mError while writing content in the file\nError: %v\n", err.Error()+"\x1b[0m")
-		return
+		os.Exit(1)
 	}
 }
